@@ -1,21 +1,40 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ActivityIndicator, View } from 'react-native';
 import { RootStackParamList } from './types';
 import AuthNavigator from './AuthNavigator';
 import TabNavigator from './TabNavigator';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { JSX } from 'react';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Root navigator — both Auth and Main flows are always registered so
-// direct navigation works without a conditional.
-// TODO: When backend auth is ready, add an AuthContext here and
-//       conditionally render only the appropriate stack so unauthenticated
-//       users cannot reach the Main tab navigator.
 const AppNavigator = (): JSX.Element => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { colors } = useTheme();
+
+  if (isLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: colors.background,
+        }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Auth">
-      <Stack.Screen name="Auth" component={AuthNavigator} />
-      <Stack.Screen name="Main" component={TabNavigator} />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {isAuthenticated ? (
+        <Stack.Screen name="Main" component={TabNavigator} />
+      ) : (
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+      )}
     </Stack.Navigator>
   );
 };

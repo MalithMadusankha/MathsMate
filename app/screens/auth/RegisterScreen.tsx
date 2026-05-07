@@ -12,21 +12,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
-import { AuthStackParamList, RootStackParamList } from '../../navigation/types';
+import { useNavigation } from '@react-navigation/native';
+import { AuthStackParamList } from '../../navigation/types';
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { extractApiError } from '../../services/api';
 import { Spacing, BorderRadius, Shadow } from '../../constants/spacing';
 import { TextStyles, FontSize, FontWeight } from '../../constants/typography';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-// CompositeNavigationProp allows navigating to both Auth-stack screens
-// (e.g. Login) and the Root-stack Main tab from within the Auth flow.
-// TODO: When auth context is ready, restrict access via AppNavigator instead.
-type RegisterNavigationProp = CompositeNavigationProp<
-  NativeStackNavigationProp<AuthStackParamList, 'Register'>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+type RegisterNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
 interface FormState {
   fullName: string;
@@ -309,6 +305,7 @@ const PasswordStrengthBar = ({
 const RegisterScreen = (): JSX.Element => {
   const navigation = useNavigation<RegisterNavigationProp>();
   const { colors, isDark, toggleTheme } = useTheme();
+  const { register } = useAuth();
 
   const [form, setForm] = useState<FormState>({
     fullName: '',
@@ -318,6 +315,7 @@ const RegisterScreen = (): JSX.Element => {
     selectedAvatar: AVATARS[0],
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Animations
@@ -362,33 +360,32 @@ const RegisterScreen = (): JSX.Element => {
     (field: keyof FormState) =>
     (value: string): void => {
       setForm((prev) => ({ ...prev, [field]: value }));
+      setApiError(null);
       if (errors[field as keyof FormErrors]) {
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     };
 
   const handleRegister = async (): Promise<void> => {
-    // ── Temporary bypass (no backend yet) ────────────────────────────────
-    // TODO: Remove this block and uncomment the full validation + API call
-    //       below once the FastAPI backend is ready.
-    navigation.navigate('Main');
-    return;
-    // ─────────────────────────────────────────────────────────────────────
-
-    // eslint-disable-next-line no-unreachable
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
 
+    setApiError(null);
     setIsLoading(true);
     try {
-      // TODO: Replace with real API call via services/api.ts
-      // const response = await api.register({ ...form });
-      // Store token/user in AuthContext, then navigate
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      navigation.navigate('Main');
+      await register({
+        full_name: form.fullName,
+        username: form.username,
+        password: form.password,
+        age: parseInt(form.age, 10),
+        avatar: form.selectedAvatar,
+      });
+      // AppNavigator switches to Main automatically after auth state updates.
+    } catch (error) {
+      setApiError(extractApiError(error));
     } finally {
       setIsLoading(false);
     }
@@ -532,6 +529,10 @@ const RegisterScreen = (): JSX.Element => {
             colors={colors}
           />
           <PasswordStrengthBar password={form.password} colors={colors} />
+
+          {apiError ? (
+            <Text style={[styles.apiError, { color: colors.error }]}>{apiError}</Text>
+          ) : null}
 
           {/* Register Button */}
           <TouchableOpacity
@@ -683,6 +684,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     marginTop: 4,
     marginLeft: 4,
+  },
+  apiError: {
+    fontSize: FontSize.sm,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+    fontWeight: FontWeight.semiBold as any,
   },
 
   // Age chips

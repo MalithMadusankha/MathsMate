@@ -1,4 +1,4 @@
-import { useRef, useEffect, JSX } from 'react';
+import { useRef, useEffect, useState, useCallback, JSX } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,14 @@ import {
   ScrollView,
   StatusBar,
   Platform,
+  RefreshControl,
 } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { dailyChallengeApi, progressApi } from '../../services/api';
 import { Spacing, BorderRadius, Shadow } from '../../constants/spacing';
 import { FontSize, FontWeight } from '../../constants/typography';
-import { GameType } from '../../types';
+import { DailyChallengeResponse, GameType, ProgressData } from '../../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -150,12 +153,30 @@ const GameCard = ({ config, colors, onPress }: GameCardProps): JSX.Element => {
 
 const HomeScreen = (): JSX.Element => {
   const { colors, isDark, toggleTheme } = useTheme();
+  const { student } = useAuth();
+  const [progress, setProgress] = useState<ProgressData | null>(null);
+  const [dailyChallenge, setDailyChallenge] = useState<DailyChallengeResponse | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const headerAnim = useRef(new Animated.Value(0)).current;
   const statsAnim  = useRef(new Animated.Value(0)).current;
   const dailyAnim  = useRef(new Animated.Value(0)).current;
   const gridAnim   = useRef(new Animated.Value(0)).current;
   const floatAnim  = useRef(new Animated.Value(0)).current;
+
+  const loadHomeData = useCallback(async (): Promise<void> => {
+    try {
+      const [progressResponse, dailyChallengeResponse] = await Promise.all([
+        progressApi.getMe(),
+        dailyChallengeApi.get(),
+      ]);
+
+      setProgress(progressResponse.data);
+      setDailyChallenge(dailyChallengeResponse.data);
+    } catch {
+      // Keep screen usable with fallback display values if the API fails.
+    }
+  }, []);
 
   useEffect(() => {
     // Staggered entrance: header → stats → daily → grid
@@ -173,7 +194,9 @@ const HomeScreen = (): JSX.Element => {
         Animated.timing(floatAnim, { toValue: 0,  duration: 2000, useNativeDriver: true }),
       ])
     ).start();
-  }, []);
+
+    loadHomeData();
+  }, [dailyAnim, floatAnim, gridAnim, headerAnim, loadHomeData, statsAnim]);
 
   // Shared slide-up + fade-in style for each section
   const slideIn = (anim: Animated.Value, fromY = 20) => ({
@@ -190,6 +213,16 @@ const HomeScreen = (): JSX.Element => {
     // e.g. navigation.navigate('Game', { gameType: type });
   };
 
+  const handleRefresh = async (): Promise<void> => {
+    setIsRefreshing(true);
+    await loadHomeData();
+    setIsRefreshing(false);
+  };
+
+  const dailyChallengeCard =
+    (dailyChallenge && GAME_CARDS.find((gameCard) => gameCard.type === dailyChallenge.gameType))
+    ?? DAILY_CHALLENGE;
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -202,6 +235,14 @@ const HomeScreen = (): JSX.Element => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         {/* ── Header ────────────────────────────────────────────────── */}
         <Animated.View style={[styles.header, slideIn(headerAnim, -20)]}>
@@ -213,18 +254,18 @@ const HomeScreen = (): JSX.Element => {
               <Text style={[styles.greeting, { color: colors.textSecondary }]}>
                 Good Morning! 👋
               </Text>
-              {/* TODO: Replace 'MathsHero' with authenticated user's name from AuthContext */}
               <Text style={[styles.playerName, { color: colors.textPrimary }]}>
-                MathsHero
+                {student?.full_name ?? 'MathsHero'}
               </Text>
             </View>
           </View>
 
           <View style={styles.headerRight}>
-            {/* Daily streak counter — TODO: pull from backend progress API */}
             <View style={[styles.streakPill, { backgroundColor: colors.primaryLight }]}>
               <Text style={styles.streakEmoji}>🔥</Text>
-              <Text style={[styles.streakCount, { color: colors.primary }]}>7</Text>
+              <Text style={[styles.streakCount, { color: colors.primary }]}>
+                {progress?.streak_days ?? 0}
+              </Text>
             </View>
 
             <TouchableOpacity
@@ -238,11 +279,25 @@ const HomeScreen = (): JSX.Element => {
         </Animated.View>
 
         {/* ── Stats Row ─────────────────────────────────────────────── */}
-        {/* TODO: Replace hardcoded values with data from progress API */}
         <Animated.View style={[styles.statsRow, slideIn(statsAnim)]}>
-          <StatBadge emoji="⭐" value="1,240"  label="Stars"  colors={colors} />
-          <StatBadge emoji="🎮" value="48"      label="Games"  colors={colors} />
-          <StatBadge emoji="🏆" value="Level 5" label="Rank"   colors={colors} />
+          <StatBadge
+            emoji="⭐"
+            value={String(progress?.total_stars ?? 0)}
+            label="Stars"
+            colors={colors}
+          />
+          <StatBadge
+            emoji="🎮"
+            value={String(progress?.games_played ?? 0)}
+            label="Games"
+            colors={colors}
+          />
+          <StatBadge
+            emoji="🏆"
+            value={`Level ${progress?.current_level ?? 1}`}
+            label="Rank"
+            colors={colors}
+          />
         </Animated.View>
 
         {/* ── Daily Challenge ───────────────────────────────────────── */}
@@ -251,7 +306,6 @@ const HomeScreen = (): JSX.Element => {
             🌟 Daily Challenge
           </Text>
 
-          {/* TODO: Fetch today's challenge from backend /api/daily-challenge */}
           <TouchableOpacity
             style={[
               styles.dailyCard,
@@ -261,22 +315,24 @@ const HomeScreen = (): JSX.Element => {
                 shadowColor: colors.primary,
               },
             ]}
-            onPress={() => handleGamePress(DAILY_CHALLENGE.type)}
+            onPress={() => handleGamePress(dailyChallengeCard.type)}
             activeOpacity={0.9}
-            accessibilityLabel={`Start daily challenge: ${DAILY_CHALLENGE.title}`}
+            accessibilityLabel={`Start daily challenge: ${dailyChallengeCard.title}`}
           >
             <Animated.Text
               style={[styles.dailyEmoji, { transform: [{ translateY: floatAnim }] }]}
             >
-              {DAILY_CHALLENGE.emoji}
+              {dailyChallengeCard.emoji}
             </Animated.Text>
 
             <View style={styles.dailyBody}>
               <View style={styles.dailyNewBadge}>
                 <Text style={styles.dailyNewText}>NEW TODAY</Text>
               </View>
-              <Text style={styles.dailyTitle}>{DAILY_CHALLENGE.title}</Text>
-              <Text style={styles.dailyDesc}>{DAILY_CHALLENGE.description}</Text>
+              <Text style={styles.dailyTitle}>{dailyChallengeCard.title}</Text>
+              <Text style={styles.dailyDesc}>
+                {dailyChallenge?.description ?? dailyChallengeCard.description}
+              </Text>
             </View>
 
             <View style={styles.dailyPlayBtn}>

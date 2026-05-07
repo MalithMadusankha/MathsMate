@@ -12,21 +12,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
-import { AuthStackParamList, RootStackParamList } from '../../navigation/types';
+import { useNavigation } from '@react-navigation/native';
+import { AuthStackParamList } from '../../navigation/types';
+import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { extractApiError } from '../../services/api';
 import { Spacing, BorderRadius, Shadow } from '../../constants/spacing';
 import { TextStyles, FontSize, FontWeight } from '../../constants/typography';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-// CompositeNavigationProp allows navigating to both Auth-stack screens
-// (e.g. Register) and the Root-stack Main tab from within the Auth flow.
-// TODO: When auth context is ready, restrict access via AppNavigator instead.
-type LoginNavigationProp = CompositeNavigationProp<
-  NativeStackNavigationProp<AuthStackParamList, 'Login'>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
 interface FormState {
   username: string;
@@ -106,10 +102,12 @@ const InputField = ({
 const LoginScreen = (): JSX.Element => {
   const navigation = useNavigation<LoginNavigationProp>();
   const { colors, isDark, toggleTheme } = useTheme();
+  const { login } = useAuth();
 
   // Form state
   const [form, setForm] = useState<FormState>({ username: '', password: '' });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Animation refs
@@ -157,33 +155,26 @@ const LoginScreen = (): JSX.Element => {
 
   const handleFieldChange = (field: keyof FormState) => (value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setApiError(null);
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleLogin = async (): Promise<void> => {
-    // ── Temporary bypass (no backend yet) ────────────────────────────────
-    // TODO: Remove this block and uncomment the full validation + API call
-    //       below once the FastAPI backend is ready.
-    navigation.navigate('Main');
-    return;
-    // ─────────────────────────────────────────────────────────────────────
-
-    // eslint-disable-next-line no-unreachable
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
 
+    setApiError(null);
     setIsLoading(true);
     try {
-      // TODO: Replace with real API call via services/api.ts
-      // const response = await api.login(form.username, form.password);
-      // Store token/user in AuthContext, then navigate
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      navigation.navigate('Main');
+      await login(form.username, form.password);
+      // AppNavigator switches to Main automatically after auth state updates.
+    } catch (error) {
+      setApiError(extractApiError(error));
     } finally {
       setIsLoading(false);
     }
@@ -281,6 +272,10 @@ const LoginScreen = (): JSX.Element => {
             error={errors.password}
             colors={colors}
           />
+
+          {apiError ? (
+            <Text style={[styles.apiError, { color: colors.error }]}>{apiError}</Text>
+          ) : null}
 
           {/* Login Button */}
           <TouchableOpacity
@@ -424,6 +419,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     marginTop: 4,
     marginLeft: 4,
+  },
+  apiError: {
+    fontSize: FontSize.sm,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+    fontWeight: FontWeight.semiBold as any,
   },
   btnLogin: {
     height: 54,
