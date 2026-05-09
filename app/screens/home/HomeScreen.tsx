@@ -16,7 +16,9 @@ import { dailyChallengeApi, progressApi } from '../../services/api';
 import { Spacing, BorderRadius, Shadow } from '../../constants/spacing';
 import { FontSize, FontWeight } from '../../constants/typography';
 import { DailyChallengeResponse, GameType, ProgressData } from '../../types';
-
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface GameCardConfig {
@@ -149,6 +151,8 @@ const GameCard = ({ config, colors, onPress }: GameCardProps): JSX.Element => {
   );
 };
 
+type HomeNavProp = NativeStackNavigationProp<RootStackParamList>;
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 const HomeScreen = (): JSX.Element => {
@@ -208,10 +212,39 @@ const HomeScreen = (): JSX.Element => {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleGamePress = (_type: GameType): void => {
-    // TODO: Navigate to the specific game screen once game screens are built.
-    // e.g. navigation.navigate('Game', { gameType: type });
-  };
+const navigation = useNavigation<HomeNavProp>();
+
+const handleGamePress = (type: GameType): void => {
+  switch (type) {
+    case 'counting':
+      navigation.navigate('Games', {
+        screen: 'CountingGame',
+        params: { difficulty: 'easy' },
+      });
+      break;
+
+    case 'comparison':
+      navigation.navigate('Games', {
+        screen: 'ComparisonGame',
+        params: { difficulty: 'easy' },
+      });
+      break;
+
+    case 'arithmetic':
+      navigation.navigate('Games', {
+        screen: 'ArithmeticGame',
+        params: { difficulty: 'medium' },
+      });
+      break;
+
+    // case 'story':
+    //   navigation.navigate('Games', { screen: 'StoryGame', params: { difficulty: 'easy' } });
+    //   break;
+
+    default:
+      break;
+  }
+};
 
   const handleRefresh = async (): Promise<void> => {
     setIsRefreshing(true);

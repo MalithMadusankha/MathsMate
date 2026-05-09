@@ -1,5 +1,4 @@
-// Defines all route names and their params in one place.
-// Any screen that uses navigation will import from here.
+import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -11,7 +10,15 @@ export type MainTabParamList = {
   Progress: undefined;
 };
 
+export type GameStackParamList = {
+  CountingGame:   { difficulty?: 'easy' | 'medium' | 'hard' };
+  ComparisonGame: { difficulty?: 'easy' | 'medium' | 'hard' };
+  ArithmeticGame: { difficulty?: 'easy' | 'medium' | 'hard' };
+  StoryGame:      { difficulty?: 'easy' | 'medium' | 'hard' };
+};
+
 export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
+  Auth:  undefined;
+  Main:  undefined;
+  Games: NavigatorScreenParams<GameStackParamList>;
 };

@@ -1,11 +1,12 @@
+import { JSX } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import { RootStackParamList } from './types';
 import AuthNavigator from './AuthNavigator';
 import TabNavigator from './TabNavigator';
+import GameNavigator from './GameNavigator';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { JSX } from 'react';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -31,7 +32,10 @@ const AppNavigator = (): JSX.Element => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
-        <Stack.Screen name="Main" component={TabNavigator} />
+        <>
+          <Stack.Screen name="Main"  component={TabNavigator} />
+          <Stack.Screen name="Games" component={GameNavigator} />
+        </>
       ) : (
         <Stack.Screen name="Auth" component={AuthNavigator} />
       )}

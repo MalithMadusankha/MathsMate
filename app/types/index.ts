@@ -92,3 +92,23 @@ export interface DailyChallengeResponse {
   description: string;
   config: DailyChallengeConfig;
 }
+
+// Add these to your existing types file
+
+export interface CountingQuestion {
+  id: string;
+  emoji: string;
+  count: number;
+  hint: string;
+}
+
+export interface GameResult {
+  gameType: GameType;
+  score: number;
+  accuracy: number;
+  streak: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  durationSeconds: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
