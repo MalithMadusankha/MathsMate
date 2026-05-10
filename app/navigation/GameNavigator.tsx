@@ -4,6 +4,7 @@ import { GameStackParamList } from './types';
 import CountingGameScreen from '../screens/games/CountingGameScreen';
 import ComparisonGameScreen from '../screens/games/ComparisonGameScreen';
 import ArithmeticGameScreen from '../screens/games/ArithmeticGameScreen';
+import PuzzleGameScreen from '../screens/games/PuzzleGameScreen';
 
 // Add more game screens here as you build them
 const Stack = createNativeStackNavigator<GameStackParamList>();
@@ -15,6 +16,7 @@ const GameNavigator = (): JSX.Element => {
     
       <Stack.Screen name="ComparisonGame" component={ComparisonGameScreen} />
       <Stack.Screen name="ArithmeticGame" component={ArithmeticGameScreen} />
+      <Stack.Screen name="PuzzleGame" component={PuzzleGameScreen} />
       {/* <Stack.Screen name="StoryGame" component={StoryGameScreen} /> */}
      
     </Stack.Navigator>

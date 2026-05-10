@@ -112,3 +112,15 @@ export interface GameResult {
   durationSeconds: number;
   difficulty: 'easy' | 'medium' | 'hard';
 }
+
+export interface PuzzleQuestion {
+  id: string;
+  type: 'missing_addend' | 'missing_result' | 'missing_minuend' | 'missing_subtrahend';
+  a: number | '?';
+  op: '+' | '-' | '×' | '÷';
+  b: number | '?';
+  result: number | '?';
+  answer: number;
+  hint: string;
+  visual: string;
+}

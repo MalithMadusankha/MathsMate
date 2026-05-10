@@ -10,15 +10,17 @@ export type MainTabParamList = {
   Progress: undefined;
 };
 
-export type GameStackParamList = {
-  CountingGame:   { difficulty?: 'easy' | 'medium' | 'hard' };
-  ComparisonGame: { difficulty?: 'easy' | 'medium' | 'hard' };
-  ArithmeticGame: { difficulty?: 'easy' | 'medium' | 'hard' };
-  StoryGame:      { difficulty?: 'easy' | 'medium' | 'hard' };
-};
 
 export type RootStackParamList = {
   Auth:  undefined;
   Main:  undefined;
   Games: NavigatorScreenParams<GameStackParamList>;
+};
+
+export type GameStackParamList = {
+  CountingGame:    { difficulty?: 'easy' | 'medium' | 'hard' };
+  ComparisonGame:  { difficulty?: 'easy' | 'medium' | 'hard' };
+  ArithmeticGame:  { difficulty?: 'easy' | 'medium' | 'hard' };
+  PuzzleGame:      { difficulty?: 'easy' | 'medium' | 'hard' }; // ← add
+  StoryGame:       { difficulty?: 'easy' | 'medium' | 'hard' };
 };
