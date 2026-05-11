@@ -124,3 +124,29 @@ export interface PuzzleQuestion {
   hint: string;
   visual: string;
 }
+
+export interface SequenceQuestion {
+  id: string;
+  type: string;
+  sequence: (number | '?')[];
+  answer: number;
+  step: string;
+  hint: string;
+  rule: string;
+}
+
+export interface DragDropQuestion {
+  id: string;
+  instruction: string;
+  numbers: number[];
+  targets: DragTarget[];
+  hint: string;
+  visual: string;
+}
+
+export interface DragTarget {
+  id: string;
+  label: string;
+  expectedValue: number;
+}
+

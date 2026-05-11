@@ -21,6 +21,8 @@ export type GameStackParamList = {
   CountingGame:    { difficulty?: 'easy' | 'medium' | 'hard' };
   ComparisonGame:  { difficulty?: 'easy' | 'medium' | 'hard' };
   ArithmeticGame:  { difficulty?: 'easy' | 'medium' | 'hard' };
-  PuzzleGame:      { difficulty?: 'easy' | 'medium' | 'hard' }; // ← add
+  PuzzleGame:      { difficulty?: 'easy' | 'medium' | 'hard' };
+  SequenceGame:    { difficulty?: 'easy' | 'medium' | 'hard' };
+  DragDropGame:    { difficulty?: 'easy' | 'medium' | 'hard' }; // ← add
   StoryGame:       { difficulty?: 'easy' | 'medium' | 'hard' };
 };

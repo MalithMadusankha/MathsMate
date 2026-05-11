@@ -373,6 +373,18 @@ const HomeScreen = (): JSX.Element => {
         } as any);
         break;
 
+      case "sequence":
+        navigation.navigate("Games", {
+          screen: "SequenceGame",
+          params: { difficulty: "easy" },
+        } as any);
+        break;
+      case "dragdrop":
+        navigation.navigate("Games", {
+          screen: "DragDropGame",
+          params: { difficulty: "easy" },
+        } as any);
+        break;
       // case 'story':
       //   navigation.navigate('Games', { screen: 'StoryGame', params: { difficulty: 'easy' } });
       //   break;
