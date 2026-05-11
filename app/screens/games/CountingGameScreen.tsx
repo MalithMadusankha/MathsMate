@@ -174,13 +174,15 @@ interface ObjectsGridProps {
 }
 
 const ObjectsGrid = ({ emoji, count, colors }: ObjectsGridProps): JSX.Element => {
-  // Each object animates in with a staggered pop
-  const anims = useRef(
-    Array.from({ length: count }, () => new Animated.Value(0))
-  ).current;
+  // Keep a persistent pool and grow it as needed when question sizes change.
+  const animsRef = useRef<Animated.Value[]>([]);
+  while (animsRef.current.length < count) {
+    animsRef.current.push(new Animated.Value(0));
+  }
+  const anims = animsRef.current;
 
   useEffect(() => {
-    anims.forEach((anim, i) => {
+    anims.slice(0, count).forEach((anim, i) => {
       anim.setValue(0);
       Animated.spring(anim, {
         toValue: 1,
@@ -190,7 +192,7 @@ const ObjectsGrid = ({ emoji, count, colors }: ObjectsGridProps): JSX.Element =>
         useNativeDriver: true,
       }).start();
     });
-  }, [emoji, count]);
+  }, [emoji, count, anims]);
 
   return (
     <View style={[styles.objectsGrid, { backgroundColor: colors.primaryLight }]}>

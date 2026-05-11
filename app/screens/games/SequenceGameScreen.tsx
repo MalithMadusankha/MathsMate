@@ -530,23 +530,27 @@ const SequenceGameScreen = (): JSX.Element => {
     };
 
     try {
+      const accuracyFloat       = result.accuracy / 100;
+      const responseTimeAvg      = result.durationSeconds > 0 ? result.durationSeconds / result.totalQuestions : 1;
+      const engagementScoreFloat = Math.min(result.streak / result.totalQuestions, 1);
+
       await sessionsApi.save({
         studentId:       student?.id ?? '',
         gameType:        result.gameType,
-        accuracy:        result.accuracy,
-        responseTime:    result.durationSeconds,
+        accuracy:        accuracyFloat,
+        responseTime:    responseTimeAvg,
         attempts:        result.totalQuestions,
-        engagementScore: result.streak,
+        engagementScore: engagementScoreFloat,
         timestamp:       new Date().toISOString(),
       });
 
       await adaptApi.next({
         studentId:       student?.id ?? '',
         gameType:        result.gameType,
-        accuracy:        result.accuracy,
-        responseTime:    result.durationSeconds,
+        accuracy:        accuracyFloat,
+        responseTime:    responseTimeAvg,
         attempts:        result.totalQuestions,
-        engagementScore: result.streak,
+        engagementScore: engagementScoreFloat,
         timestamp:       new Date().toISOString(),
       });
     } catch {
